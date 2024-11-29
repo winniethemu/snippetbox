@@ -2,13 +2,16 @@ package main
 
 import (
 	"flag"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 )
 
 func main() {
 	addr := flag.String("addr", ":4000", "HTTP network address")
 	flag.Parse()
+
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	// 1. Request URLs are automatically sanitized, e.g /foo/bar/..//baz redirects to /foo/baz
 	// 2. If /foo/ is registered, then /foo redirects to /foo/
@@ -22,9 +25,10 @@ func main() {
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))
 
-	log.Printf("starting server on %s", *addr)
+	logger.Info("starting server", "addr", *addr)
 
 	// This runs an infinite loop and only returns when an error occurs
 	err := http.ListenAndServe(*addr, mux)
-	log.Fatal(err)
+	logger.Error(err.Error())
+	os.Exit(1)
 }
