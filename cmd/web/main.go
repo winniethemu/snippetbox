@@ -14,6 +14,10 @@ func main() {
 	mux.HandleFunc("GET /snippet/create", snippetCreate)
 	mux.HandleFunc("POST /snippet/create", snippetCreatePost)
 
+	// Static assets
+	fileServer := http.FileServer(http.Dir("./ui/static/"))
+	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))
+
 	log.Print("starting server on :4000")
 
 	// This runs an infinite loop and only returns when an error occurs
