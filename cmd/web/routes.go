@@ -2,7 +2,7 @@ package main
 
 import "net/http"
 
-func (app *application) routes() *http.ServeMux {
+func (app *application) routes() http.Handler {
 	// 1. Request URLs are automatically sanitized, e.g /foo/bar/..//baz redirects to /foo/baz
 	// 2. If /foo/ is registered, then /foo redirects to /foo/
 	mux := http.NewServeMux()
@@ -15,5 +15,5 @@ func (app *application) routes() *http.ServeMux {
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))
 
-	return mux
+	return commonHeaders(mux)
 }
