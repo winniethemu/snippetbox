@@ -54,37 +54,26 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	app.render(w, r, http.StatusOK, "create.html", data)
 }
 
+// struct tags map HTML name attributes to corresponding struct fields for form.Decoder
 type snippetCreateForm struct {
-	Title   string
-	Content string
-	Expires int
-	validator.Validator
+	Title               string `form:"title"`
+	Content             string `form:"content"`
+	Expires             int    `form:"expires"`
+	validator.Validator `form:"-"`
 }
 
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		app.clientError(w, http.StatusBadRequest)
-		return
-	}
-	title := r.PostForm.Get("title")
-	content := r.PostForm.Get("content")
-	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
+	var form snippetCreateForm
+	err := app.decodePostForm(r, &form)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
 
-	form := snippetCreateForm{
-		Title:   title,
-		Content: content,
-		Expires: expires,
-	}
-
-	form.CheckField(validator.NotBlank(title), "title", "This field cannot be blank")
-	form.CheckField(validator.MaxChars(title, 100), "title", "This field cannot be more than 100 characters long")
-	form.CheckField(validator.NotBlank(content), "content", "This field cannot be blank")
-	form.CheckField(validator.PermittedValue(expires, 1, 7, 365), "expires", "This field must equal 1, 7, or 365")
+	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
+	form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long")
+	form.CheckField(validator.NotBlank(form.Content), "content", "This field cannot be blank")
+	form.CheckField(validator.PermittedValue(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7, or 365")
 
 	if !form.Valid() {
 		data := app.newTemplateData(r)
@@ -93,7 +82,7 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	id, err := app.snippets.Insert(title, content, expires)
+	id, err := app.snippets.Insert(form.Title, form.Content, form.Expires)
 	if err != nil {
 		app.serverError(w, r, err)
 		return
